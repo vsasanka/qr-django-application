@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+
+    <!-- Add Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+
+        h1 {
+            color: #007bff;
+            text-align: center;
+        }
+
+        .chat-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .chat-item-container {
+            font-size: 20px;
+            margin-top: 20px;
+        }
+
+        input {
+            width: 70%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        #id_message_send_button {
+            width: 28%;
+            padding: 8px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        #id_message_send_input {
+            margin-right: 10px;
+        }
+
+        #id_message_send_button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container chat-container">
+        <h1>Hello, Welcome to the chat site! {{ request.user }}</h1>
+
+        {% if request.user.is_authenticated %}
+        <div class="text-center">
+            Logout the chat Page <a href="{% url 'logout-user' %}">Logout</a>
+        </div>
+        {% endif %}
+
+        <div class="chat-item-container" id="id_chat_item_container">
+            <br />
+            <input type="text" id="id_message_send_input" />
+            <button type="submit" id="id_message_send_button">Send Message</button>
+            <br />
+            <br />
+        </div>
+    </div>
+
+    <!-- Add Bootstrap JS and Popper.js for Bootstrap features -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+
+    <script>
+		const chatSocket = new WebSocket("ws://" + window.location.host + "/");
+		chatSocket.onopen = function (e) {
+			console.log("The connection was set up successfully!");
+		};
+		chatSocket.onclose = function (e) {
+			console.log("Something unexpected happened!");
+		};
+	
+		document.querySelector("#id_message_send_input").focus();
+		document.querySelector("#id_message_send_input").onkeyup = function (e) {
+			if (e.keyCode == 13) {
+				document.querySelector("#id_message_send_button").click();
+			}
+		};
+		document.querySelector("#id_message_send_button").onclick = function (e) {
+			var messageInput = document.querySelector("#id_message_send_input").value;
+			chatSocket.send(JSON.stringify({ message: messageInput, username: "{{request.user.username}}" }));
+		};
+	
+		chatSocket.onmessage = function (e) {
+			const data = JSON.parse(e.data);
+			var div = document.createElement("div");
+			
+			if (data.username === "{{request.user.username}}") {
+				// If the message is sent by the current user, align it to the right
+				div.style.textAlign = "right";
+			} else {
+				// If the message is received, align it to the left
+				div.style.textAlign = "left";
+			}
+	
+			div.innerHTML = data.username + " : " + data.message;
+			document.querySelector("#id_message_send_input").value = "";
+			document.querySelector("#id_chat_item_container").appendChild(div);
+		};
+	</script>
+	
+</body>
+</html>
